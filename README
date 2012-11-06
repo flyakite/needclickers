@@ -2,7 +2,8 @@ Official NeedClickers website add-on
 Sometimes we need information from the facebook apps page, and this browser extension can do the trick.
 
 Feature:
-Help to find invalid clicks in Castle Age and show up in the website.
+Help to find invalid clicks in Castle Age.
+Right click on a Castle Age user and go to his/her NeedClickers page.
 
 
 Privacy:
@@ -11,6 +12,9 @@ You can find our source code on https://github.com/flyakite/needclickers.
 
 
 Version:
+Beta v0.1.4
+ Update to manifest_version 2, Longest Common Subsequence deprecated.
+
 Beta v0.1.1
 Update algorithm.
 
