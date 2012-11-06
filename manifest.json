@@ -1,11 +1,14 @@
  {
 	"name": "NeedClickers",
 	"description": "NeedClickers website add-on",
-	"version": "0.1.1",
+	"version": "0.1.4",
+	"manifest_version": 2,
 	"permissions": [
 	  "tabs","http://www.needclickers.com/*","https://www.needclickers.com/*","http://apps.facebook.com/*","https://apps.facebook.com/*","http://web.castleagegame.com/*","https://web.castleagegame.com/*","contextMenus"
 	],
-	"background_page" : "background.html",
+	"background" : {
+		"scripts": ["background.js"]
+	},
 	"icons": { "16": "16.png",
         "48": "48.png",
         "128": "128.png" },

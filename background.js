@@ -1,8 +1,3 @@
-<!DOCTYPE html>
-<html>
-  <head>
-	<script src='jquery.min.js'></script>
-    <script>
 
 
 function goToUserPage(info, tab){
@@ -14,7 +9,7 @@ function goToUserPage(info, tab){
     window.open('http://www.needclickers.com/user/'+pattern[0].match(/\d+/)[0])
   }
 }
-chrome.contextMenus.create({"title": "This user's NC page", "contexts": ["link"], "documentUrlPatterns":["*://web.castleagegame.com/castle/*"], "onclick": goToUserPage});
+chrome.contextMenus.create({"title": "NeedClickers Page", "contexts": ["link"], "documentUrlPatterns":["*://web.castleagegame.com/castle/*"], "onclick": goToUserPage});
 
 
 var LCSTable = function(X, Y){
@@ -59,7 +54,7 @@ var LCSTraceback = function(C, X, Y, i, j){
     }
 }
 
-/* Longest Common Subsequence */
+/* Longest Common Subsequence(deprecated) */
 var LCS = function(X, Y){
     var lcs = LCSTraceback(LCSTable(X, Y), X, Y, X.length-1, Y.length-1);
     return {lastindex: lcs[0],
@@ -80,9 +75,9 @@ var LCSLastXIndex = function(C, X, Y, i, j){
     }
 }
 
-var findInvalidClickIDs = function(clicker_ids, launcher_ids){
+var findInvalidClickIDs_backup = function(clicker_ids, launcher_ids){
     if(launcher_ids.length>0){
-        //find the last index of clicker_ids in LCS 
+        //find the last index of clicker_ids in LCS (Longest Common Subsequence)
 	    //var xi = LCSLastXIndex(LCSTable(clicker_ids, launcher_ids), clicker_ids, launcher_ids, clicker_ids.length-1, launcher_ids.length-1);
 	    //console.log(xi)
 	    
@@ -108,41 +103,55 @@ var findInvalidClickIDs = function(clicker_ids, launcher_ids){
     }
 }
 
+var findInvalidClickIDs = function(clicker_ids, launcher_ids){
+    //an easy check
+    var invalid_ids = clicker_ids.filter(function(x){ 
+        return launcher_ids.indexOf(x) < 0;
+    });
+    if(invalid_ids.length === 0){
+       return {invalid_ids:[], message:'No invalid clicks.'};
+    }else{
+       return {invalid_ids:invalid_ids, message:''};
+    }
+}
 var url_tabid={}, url_clickers={};
 
 /* event Listener */
 function onMessage(request, sender, callback) {
-    console.log('Action:' + request.action)
+    console.log(sender);
+    console.log('Action:' + request.action);
+    var sender_fullpath = sender.tab.url.replace(/.*:\/\//,'');
     if(request.action == 'checkRunning'){ 
-        //chech if we need to run a compare for this game page
-        //console.log(sender.tab.url);
-        //console.log(url_tabid[sender.tab.url]);
-        callback(url_tabid[sender.tab.url]);
+		//send from game page to ensure game page loaded, and callback to get launcher ids
+		console.log(sender_fullpath)
+		console.log(url_tabid[sender_fullpath])
+		callback(url_tabid[sender_fullpath]);
     }else if(request.action == 'fetchPage') {
-        //open game page
-        url_tabid[request.url] = sender.tab.id
-        url_clickers[request.url] = request.clicker_ids
-        console.log(url_tabid);
-        chrome.tabs.create({url:request.url, active:false}, function(tab){
-            //console.log(tab.id)
-        });
+        //send from needclickers page to open game page
+		console.log('fetchPage request url: ' + request.url.replace(/.*:\/\//,''))
+		console.log(sender.tab.id)
+		url_tabid[request.url.replace(/.*:\/\//,'')] = sender.tab.id
+		url_clickers[request.url.replace(/.*:\/\//,'')] = request.clicker_ids
+		console.log(url_tabid);
+		chrome.tabs.create({url:request.url, active:false}, function(tab){
+			//console.log(tab.id)
+		});
     }else if(request.action == 'respondLauncherID'){
         //get returned launcher ids, find invalid clicks and respond to needclickers website
-        var respond_tabid = url_tabid[sender.tab.url]
-        var clicker_ids = url_clickers[sender.tab.url]
-        var report = findInvalidClickIDs(clicker_ids, request.launcher_ids)
-        console.log(report.message)
-        console.log(report.invalid_ids)
-        delete url_tabid[sender.tab.url]
-        delete url_clickers[sender.tab.url]
-        chrome.tabs.sendRequest(respond_tabid, {action: 'respondLauncherID', report:report}, function(){});
+		console.log('respond to tab url:')
+		console.log(sender_fullpath)
+		var respond_tabid = url_tabid[sender_fullpath],
+		    clicker_ids = url_clickers[sender_fullpath],
+		    report = findInvalidClickIDs(clicker_ids, request.launcher_ids);
+		console.log(report)
+		console.log(respond_tabid)
+		delete url_tabid[sender_fullpath]
+		delete url_clickers[sender_fullpath]
+		callback(clicker_ids);
+		chrome.tabs.sendMessage(respond_tabid, {action: 'respondLauncherID', report:report, sender_fullpath:sender_fullpath}, function(){});
         
     }
 };
 
 // Wire up the listener.
 chrome.extension.onMessage.addListener(onMessage);
-
-	</script>
-  </head>
-</html>
